@@ -1,0 +1,48 @@
+Resources:
+  WeddingVpc:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: 10.0.0.0/16
+  WeddingGateway:
+    Type: "AWS::EC2::InternetGateway"
+  WeddingVpcGatewayMapping:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref WeddingVpc
+      InternetGatewayId: !Ref WeddingGateway
+  WeddingPublicSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      VpcId: !Ref WeddingVpc
+      MapPublicIpOnLaunch: true
+  NginxContainerTaskDefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ContainerDefinitions:
+      - Interactive: true
+        Image: "nginx"
+        PortMappings:
+          - ContainerPort: 80
+            HostPort: 80
+            Protocol: "tcp"
+        Name: "wedding"
+      Memory: 512
+      Cpu: '256'
+      NetworkMode: "awsvpc"
+  WeddingCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: "WeddingCluster"
+  WeddingService:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !GetAtt WeddingCluster.Arn
+      LaunchType: "FARGATE"
+      SchedulingStrategy: "REPLICA"
+      DesiredCount: 1
+      TaskDefinition: !Ref NginxContainerTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+         Subnets:
+           - !Ref WeddingPublicSubnet
