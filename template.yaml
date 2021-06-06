@@ -1,3 +1,8 @@
+Parameters:
+  Version:
+    Type: String
+    Description: Version of the docker image
+
 Resources:
   WeddingEcsServiceRole:
     Type: "AWS::IAM::Role"
@@ -90,11 +95,15 @@ Resources:
       - CidrIp: "0.0.0.0/0"
         FromPort: 80
         ToPort: 80
-        IpProtocol: -1
+        IpProtocol: tcp
       - CidrIp: "0.0.0.0/0"
         FromPort: 443
         ToPort: 443
-        IpProtocol: -1
+        IpProtocol: tcp
+      - CidrIp: "0.0.0.0/0"
+        FromPort: 8080
+        ToPort: 8080
+        IpProtocol: tcp
       VpcId: !Ref WeddingVpc
 
   NginxContainerTaskDefinition:
@@ -102,7 +111,7 @@ Resources:
     Properties:
       ContainerDefinitions:
       - Interactive: true
-        Image: "186539776832.dkr.ecr.us-west-2.amazonaws.com/wedding/nginx:v4"
+        Image: !Sub "186539776832.dkr.ecr.us-west-2.amazonaws.com/wedding/nginx:${Version}"
         PortMappings:
           - ContainerPort: 80
             HostPort: 80

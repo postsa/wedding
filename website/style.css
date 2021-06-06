@@ -143,7 +143,7 @@ a.pure-button-primary {
     position: fixed !important;
     background-image: url(banner-image.jpeg);
     background-repeat: no-repeat;
-    background-width: 125%;
+    background-size: 125%;
 }
 
 .splash {
@@ -212,9 +212,9 @@ a.pure-button-primary {
 .content-subhead {
     color: #1f8dd6;
 }
-    .content-subhead i {
-        margin-right: 7px;
-    }
+.content-subhead i {
+    margin-right: 7px;
+}
 
 /* This is the class used for the dark-background areas. */
 .ribbon {
@@ -247,14 +247,14 @@ a.pure-button-primary {
     .home-menu {
         text-align: left;
     }
-        .home-menu ul {
-            float: right;
-        }
+    .home-menu ul {
+        float: right;
+    }
 
     /* We increase the height of the splash-container */
-/*    .splash-container {
-        height: 500px;
-    }*/
+    /*    .splash-container {
+            height: 500px;
+        }*/
 
     /* We decrease the width of the .splash, since we have more width
     to work with */
