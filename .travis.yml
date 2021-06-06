@@ -4,4 +4,4 @@ branches:
   only:
     - main
 
-script: chmod u+x deploy_ci.sh
+script: ./deploy_ci.sh
