@@ -1,3 +1,7 @@
 language: bash
 
+branches:
+  only:
+    - main
+
 script: chmod u+x deploy_ci.sh
