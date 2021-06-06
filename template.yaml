@@ -1,48 +1,199 @@
 Resources:
+  WeddingEcsServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: WeddingEcsEcr
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetAuthorizationToken
+                Resource:
+                  "*"
+
   WeddingVpc:
     Type: "AWS::EC2::VPC"
     Properties:
       CidrBlock: 10.0.0.0/16
+
+  WeddingPublicRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref WeddingVpc
+
   WeddingGateway:
     Type: "AWS::EC2::InternetGateway"
+
+  WeddingPublicInternetRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      GatewayId: !Ref WeddingGateway
+      RouteTableId: !Ref WeddingPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+
   WeddingVpcGatewayMapping:
     Type: "AWS::EC2::VPCGatewayAttachment"
     Properties:
       VpcId: !Ref WeddingVpc
       InternetGatewayId: !Ref WeddingGateway
+
   WeddingPublicSubnet:
     Type: "AWS::EC2::Subnet"
     Properties:
-      CidrBlock: 10.0.1.0/24
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: "us-west-2a"
       VpcId: !Ref WeddingVpc
       MapPublicIpOnLaunch: true
+
+  WeddingPublicSubnet2:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: "us-west-2b"
+      VpcId: !Ref WeddingVpc
+      MapPublicIpOnLaunch: true
+
+  WeddingSubnetPublicRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref WeddingPublicRouteTable
+      SubnetId: !Ref WeddingPublicSubnet
+
+  WeddingSubnetPublicRouteTableAssociation2:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref WeddingPublicRouteTable
+      SubnetId: !Ref WeddingPublicSubnet2
+
+  WeddingSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "ECS Management"
+      SecurityGroupEgress:
+      - CidrIp: "0.0.0.0/0"
+        IpProtocol: -1
+      SecurityGroupIngress:
+      - CidrIp: "0.0.0.0/0"
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: -1
+      - CidrIp: "0.0.0.0/0"
+        FromPort: 443
+        ToPort: 443
+        IpProtocol: -1
+      VpcId: !Ref WeddingVpc
+
   NginxContainerTaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
       ContainerDefinitions:
       - Interactive: true
-        Image: "nginx"
+        Image: "186539776832.dkr.ecr.us-west-2.amazonaws.com/wedding/nginx:v4"
         PortMappings:
           - ContainerPort: 80
             HostPort: 80
             Protocol: "tcp"
+          - ContainerPort: 443
+            HostPort: 443
+            Protocol: "tcp"
+          - ContainerPort: 22
+            HostPort: 22
+            Protocol: "tcp"
         Name: "wedding"
+      ExecutionRoleArn: !GetAtt WeddingEcsServiceRole.Arn
       Memory: 512
       Cpu: '256'
+      RequiresCompatibilities:
+        - "FARGATE"
       NetworkMode: "awsvpc"
+
   WeddingCluster:
     Type: "AWS::ECS::Cluster"
     Properties:
       ClusterName: "WeddingCluster"
+
   WeddingService:
     Type: "AWS::ECS::Service"
+    DependsOn: HTTPWeddingListener
     Properties:
       Cluster: !GetAtt WeddingCluster.Arn
       LaunchType: "FARGATE"
       SchedulingStrategy: "REPLICA"
       DesiredCount: 1
       TaskDefinition: !Ref NginxContainerTaskDefinition
+      LoadBalancers:
+        - ContainerName: 'wedding'
+          ContainerPort: 80
+          TargetGroupArn: !Ref WeddingDefaultTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
+         AssignPublicIp: "ENABLED"
+         SecurityGroups:
+           - !Ref WeddingSecurityGroup
          Subnets:
            - !Ref WeddingPublicSubnet
+           - !Ref WeddingPublicSubnet2
+
+  WeddingLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      IpAddressType: "ipv4"
+      Name: 'wedding-app-load-balancer'
+      Subnets:
+        - !Ref WeddingPublicSubnet
+        - !Ref WeddingPublicSubnet2
+      Type: "application"
+      SecurityGroups:
+        - !Ref WeddingSecurityGroup
+
+  HTTPSWeddingListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      Certificates:
+        - CertificateArn: '{{resolve:secretsmanager:wedding-certificate:SecretString:arn}}'
+      DefaultActions:
+        - Type: "forward"
+          TargetGroupArn: !Ref WeddingDefaultTargetGroup
+      LoadBalancerArn: !Ref WeddingLoadBalancer
+      Port: 443
+      Protocol: "HTTPS"
+      SslPolicy: 'ELBSecurityPolicy-2016-08'
+
+  HTTPWeddingListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+      LoadBalancerArn: !Ref WeddingLoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+
+  WeddingDefaultTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: 'wedding-target-group'
+      Port: 80
+      Protocol: 'HTTP'
+      TargetType: 'ip'
+      VpcId: !Ref WeddingVpc
