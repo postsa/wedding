@@ -1,7 +1,15 @@
-language: bash
+dist: xenial
+
+before_install:
+  - pyenv global 3.7.1
+  - pip install -U pip
+  - pip install awscli
+
+jobs:
+  include:
+    - stage: setup files
+      script: ./deploy_ci.sh
 
 branches:
   only:
     - main
-
-script: ./deploy_ci.sh
