@@ -1,4 +1,6 @@
 dist: xenial
+os: linux
+language: shell
 
 before_install:
   - pyenv global 3.7.1
