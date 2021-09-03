@@ -9,7 +9,14 @@ jobs:
       - setup_remote_docker:
           version: 19.03.13
           docker_layer_caching: false
-      - run: ./deploy_ci.sh
+      - run:
+          name: Install AWS CLI
+          command: |
+            pip install -U pip
+            pip install awscli
+      - run:
+          name: Deploy
+          command: ./deploy_ci.sh
 
 workflows:
   deploy:
