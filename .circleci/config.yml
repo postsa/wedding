@@ -6,6 +6,9 @@ jobs:
       - image: cimg/base:2021.04
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
       - run: ./deploy_ci.sh
 
 workflows:
