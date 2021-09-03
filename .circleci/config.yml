@@ -6,7 +6,7 @@ jobs:
       - image: cimg/base:2021.04
     steps:
       - checkout
-      - run: ./deploy.sh
+      - run: ./deploy_ci.sh
 
 workflows:
   deploy:
