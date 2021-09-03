@@ -11,6 +11,7 @@ IMAGE_ID=$(docker build -q . | sed 's/sha256://g' | sed 's/ //g' | cut -c 1-12)
 $(aws ecr get-login | sed 's/-e none//g')
 LOGIN_RESULT=$?
 if [[ $LOGIN_RESULT != 0 ]]; then
+  echo "login failed"
   exit $LOGIN_RESULT
 fi
 
@@ -21,6 +22,7 @@ docker push $TAG:$VERSION
 
 PUSH_RESULT=$?
 if [[ $PUSH_RESULT != 0 ]]; then
+  echo "push failed"
   exit $PUSH_RESULT
 fi
 
