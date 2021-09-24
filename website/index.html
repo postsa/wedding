@@ -28,6 +28,19 @@
     </div>
 </div>
 
+<div id="welcome-drink-modal" class="modal">
+    <div class="splash-container" style="color:black;background-color:white;">
+        <div class="splash">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h1 class="splash-head" style="color:black">Join us for welcome drinks!</h1>
+                <p class="splash-subhead" style="color:black">7:00pm on Friday the 24th at <a
+                        href="https://boulder.avantifandb.com/">Avanti</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="splash-container">
     <div class="splash">
         <h1 class="splash-head">9.25.2021</h1>
@@ -55,7 +68,9 @@
             <div class="l-box is-center pure-u-1 pure-u-md-1-2 pure-u-lg-1-1">
                 <h4>4:30 - Doors</h4>
                 <h4>5:00 - Ceremony</h4>
-                <h4>5:30 - Reception</h4>
+                <h4>5:30 - Cocktail Hour</h4>
+                <h4>6:30 - Dinner and Dancing</h4>
+                <h4>11:30 - End</h4>
             </div>
         </div>
     </div>
@@ -85,11 +100,25 @@
             <h2 class="content-head content-head-ribbon">Registry</h2>
             <a href="https://www.crateandbarrel.com/gift-registry/kathryn-osborn-and-spencer-post/r6311805">
                 <img src="registry.png" alt="registry" style="max-width: 50%">
-            </a>a
+            </a>
         </div>
     </div>
 </div>
 
+<script>
+    const welcomeDrinkModal = document.getElementById("welcome-drink-modal");
+    const close = document.getElementsByClassName("close")[0];
+    close.onclick = function() {
+        welcomeDrinkModal.style.display = "none";
+    }
+    window.onclick = function(event) {
+        if (event.target === welcomeDrinkModal) {
+            welcomeDrinkModal.style.display = "none";
+        }
+    }
+    window.onload = function() {
+        welcomeDrinkModal.style.display = "block";
+    }
+</script>
 </body>
-
 </html>
